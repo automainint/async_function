@@ -1,3 +1,3 @@
 @PACKAGE_INIT@
 
-include("${CMAKE_CURRENT_LIST_DIR}/@FAIR_TARGETS@.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/@AF_TARGETS@.cmake")
