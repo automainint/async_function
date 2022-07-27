@@ -100,7 +100,7 @@ if(AF_ENABLE_LIBRARY)
   string(TOLOWER ${PROJECT_NAME} project_lower_)
 
   configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.cmake.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/config.cmake.in
     "${CMAKE_CURRENT_BINARY_DIR}/${project_lower_}-config.cmake"
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
