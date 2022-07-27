@@ -25,7 +25,7 @@ if(AF_ENABLE_LIBRARY OR AF_ENABLE_TESTING)
   add_library(${AF_PROJECT}::${AF_LIBRARY} ALIAS ${AF_LIBRARY})
   target_include_directories(
     ${AF_LIBRARY} INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>)
   target_compile_features(${AF_LIBRARY} PUBLIC c_std_99)
 endif()
 
@@ -50,7 +50,7 @@ if(AF_ENABLE_TESTING)
 
   add_test(
     NAME ${AF_UNITTESTS}
-    COMMAND ${AF_TEST} --test)
+    COMMAND ${AF_TEST})
 
   set_tests_properties(
     ${AF_UNITTESTS}
