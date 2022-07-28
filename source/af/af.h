@@ -14,6 +14,7 @@ enum af_status {
 };
 
 typedef struct {
+  int _;
 } af_void;
 
 #define af self->
@@ -50,6 +51,8 @@ typedef struct {
 #define CORO(ret_type_, name_, ...)        \
   AF_STATE(ret_type_, name_, __VA_ARGS__); \
   AF_IMPL(ret_type_, name_)
+
+#define CORO_VOID(name_, ...) CORO(af_void, name_, __VA_ARGS__)
 
 #define AF_YIELD(...)                         \
   {                                           \

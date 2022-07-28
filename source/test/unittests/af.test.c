@@ -19,7 +19,7 @@ CORO(int, gen, int i; int min; int max;) {
 }
 CORO_END
 
-CORO(af_void, task) {
+CORO_VOID(task) {
   AF_YIELD_VOID;
   AF_YIELD_VOID;
   AF_RETURN_VOID;
