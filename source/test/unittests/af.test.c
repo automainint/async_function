@@ -61,23 +61,19 @@ CORO(int, test_await_multiple, AF_TYPE(test_bar) promises[3];) {
 }
 CORO_END
 
-void test_lazy_resume(void *_, af_state_machine state_machine,
-                      void *coro) { }
-
-void test_lazy_join(void *_, af_state_machine state_machine,
-                    void *coro) {
+void test_execute_lazy(void *_, void *coro, int request) {
+  if (request == af_request_resume)
+    return;
   AF_INTERNAL(coro)._status = af_status_ready;
-  state_machine(coro, af_request_join);
+  AF_INTERNAL(coro)._state_machine(coro, af_request_join);
 }
 
-void test_immediate_resume(void *_, af_state_machine state_machine,
-                           void *coro) {
+void test_execute_immediate(void *_, void *coro, int request) {
+  if (request == af_request_join)
+    return;
   AF_INTERNAL(coro)._status = af_status_ready;
-  state_machine(coro, af_request_join);
+  AF_INTERNAL(coro)._state_machine(coro, af_request_join);
 }
-
-void test_immediate_join(void *_, af_state_machine state_machine,
-                         void *coro) { }
 
 TEST("coroutine create") {
   AF_CREATE(promise, test_foo);
@@ -184,8 +180,7 @@ TEST("coroutine await multiple") {
 TEST("coroutine custom execution context lazy") {
   AF_CREATE(promise, test_foo, .return_value = 0);
   AF_EXECUTION_CONTEXT(promise, .state = NULL,
-                       .resume = test_lazy_resume,
-                       .join   = test_lazy_join);
+                       .execute = test_execute_lazy);
   AF_RESUME(promise);
   REQUIRE(promise.return_value == 0);
   REQUIRE(!AF_FINISHED(promise));
@@ -197,8 +192,7 @@ TEST("coroutine custom execution context lazy") {
 TEST("coroutine custom execution context immediate") {
   AF_CREATE(promise, test_foo, .return_value = 0);
   AF_EXECUTION_CONTEXT(promise, .state = NULL,
-                       .resume = test_immediate_resume,
-                       .join   = test_immediate_join);
+                       .execute = test_execute_immediate);
   AF_RESUME(promise);
   REQUIRE(promise.return_value == 42);
   REQUIRE(AF_FINISHED(promise));

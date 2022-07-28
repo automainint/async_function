@@ -24,14 +24,12 @@ typedef struct {
 } af_void;
 
 typedef void (*af_state_machine)(void *self_void_, int request_);
-typedef void (*af_execution)(void            *state,
-                             af_state_machine state_machine,
-                             void            *coro_state);
+typedef void (*af_execute)(void *state, void *coro_state,
+                           int request);
 
 typedef struct {
-  void        *state;
-  af_execution resume;
-  af_execution join;
+  void      *state;
+  af_execute execute;
 } af_execution_context;
 
 typedef struct {
@@ -60,38 +58,26 @@ typedef struct {
 #define AF_DECL(name_) \
   void name_##_coro_(void *self_void_, int request_)
 
-#define CORO_IMPL(name_)                                   \
-  AF_DECL(name_) {                                         \
-    struct name_##_coro_state_ *self =                     \
-        (struct name_##_coro_state_ *) self_void_;         \
-    if (self->_status == af_status_suspended) {            \
-      if (request_ == af_request_resume &&                 \
-          self->_context.resume != NULL)                   \
-        self->_context.resume(self->_context.state,        \
-                              self->_state_machine, self); \
-      else if (request_ == af_request_join &&              \
-               self->_context.join != NULL)                \
-        self->_context.join(self->_context.state,          \
-                            self->_state_machine, self);   \
-      else if (request_ == af_request_resume_and_join &&   \
-               self->_context.resume != NULL &&            \
-               self->_context.join != NULL) {              \
-        self->_context.resume(self->_context.state,        \
-                              self->_state_machine, self); \
-        self->_context.join(self->_context.state,          \
-                            self->_state_machine, self);   \
-      } else if (request_ == af_request_join ||            \
-                 request_ == af_request_resume_and_join) { \
-        self->_status = af_status_ready;                   \
-        self->_state_machine(self, af_request_join);       \
-      }                                                    \
-      return;                                              \
-    }                                                      \
-    if (self->_status != af_status_ready ||                \
-        request_ != af_request_join)                       \
-      return;                                              \
-    self->_status = af_status_running;                     \
-    switch (self->_index) {                                \
+#define CORO_IMPL(name_)                                         \
+  AF_DECL(name_) {                                               \
+    struct name_##_coro_state_ *self =                           \
+        (struct name_##_coro_state_ *) self_void_;               \
+    if (self->_status == af_status_suspended) {                  \
+      if (self->_context.execute != NULL)                        \
+        self->_context.execute(self->_context.state, self_void_, \
+                               request_);                        \
+      else if (request_ == af_request_join ||                    \
+               request_ == af_request_resume_and_join) {         \
+        self->_status = af_status_ready;                         \
+        self->_state_machine(self_void_, af_request_join);       \
+      }                                                          \
+      return;                                                    \
+    }                                                            \
+    if (self->_status != af_status_ready ||                      \
+        request_ != af_request_join)                             \
+      return;                                                    \
+    self->_status = af_status_running;                           \
+    switch (self->_index) {                                      \
       case 0:;
 
 #define AF_LINE() __LINE__
@@ -180,7 +166,7 @@ typedef struct {
 #define AF_INITIAL(coro_)                      \
   ._status = af_status_suspended, ._index = 0, \
   ._state_machine = coro_##_coro_,             \
-  ._context       = { .state = NULL, .resume = NULL, .join = NULL }
+  ._context       = { .state = NULL, .execute = NULL }
 
 #define AF_CREATE(promise_, coro_, ...) \
   AF_TYPE(coro_)                        \
