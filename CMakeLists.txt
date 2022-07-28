@@ -26,7 +26,7 @@ if(AF_ENABLE_LIBRARY OR AF_ENABLE_TESTING)
   target_include_directories(
     ${AF_LIBRARY} INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>)
-  target_compile_features(${AF_LIBRARY} PUBLIC c_std_99)
+  target_compile_features(${AF_LIBRARY} PUBLIC c_std_11)
 endif()
 
 enable_testing()
@@ -34,7 +34,7 @@ enable_testing()
 if(AF_ENABLE_TESTING)
   add_executable(${AF_TEST})
   add_executable(${AF_PROJECT}::${AF_TEST} ALIAS ${AF_TEST})
-  target_compile_features(${AF_TEST} PRIVATE c_std_99)
+  target_compile_features(${AF_TEST} PRIVATE c_std_11)
   target_link_libraries(${AF_TEST} PRIVATE ${AF_LIBRARY})
 
   if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
