@@ -88,14 +88,13 @@ typedef struct {
 
 #define AF_TYPE(coro_) struct coro_##_coro_state_
 
-#define AF_INIT(promise_, coro_)                   \
-  (promise_)._status        = af_status_suspended; \
-  (promise_)._index         = 0;                   \
-  (promise_)._state_machine = coro_##_coro_
+#define AF_INIT(coro_)                         \
+  ._status = af_status_suspended, ._index = 0, \
+  ._state_machine = coro_##_coro_
 
-#define AF_CREATE(promise_, coro_, ...)      \
-  AF_TYPE(coro_) promise_ = { __VA_ARGS__ }; \
-  AF_INIT(promise_, coro_)
+#define AF_CREATE(promise_, coro_, ...) \
+  AF_TYPE(coro_)                        \
+  promise_ = { AF_INIT(coro_), __VA_ARGS__ };
 
 #define AF_DESTROY(promise_)
 
