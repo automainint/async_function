@@ -19,23 +19,22 @@ typedef struct {
 
 #define af self->
 
-#define AF_STATE(ret_type_, name_, ...)                             \
-  struct name_##_coro_state_ {                                      \
-    int       _status;                                              \
-    int       _index;                                               \
-    ret_type_ return_value;                                         \
-    ret_type_ const *(*_state_machine)(struct name_##_coro_state_ * \
-                                       self);                       \
-    __VA_ARGS__                                                     \
+#define AF_STATE(ret_type_, name_, ...)                        \
+  struct name_##_coro_state_ {                                 \
+    int       _status;                                         \
+    int       _index;                                          \
+    ret_type_ return_value;                                    \
+    void (*_state_machine)(struct name_##_coro_state_ * self); \
+    __VA_ARGS__                                                \
   }
 
 #define AF_DECL(ret_type_, name_) \
-  ret_type_ const *name_##_coro_(struct name_##_coro_state_ *self)
+  void name_##_coro_(struct name_##_coro_state_ *self)
 
 #define AF_IMPL(ret_type_, name_)             \
   AF_DECL(ret_type_, name_) {                 \
     if (self->_status != af_status_suspended) \
-      return &self->return_value;             \
+      return;                                 \
     self->_status = af_status_running;        \
     switch (self->_index) {                   \
       case 0:;
@@ -45,8 +44,6 @@ typedef struct {
 #define CORO_END                      \
   }                                   \
   self->_status = af_status_finished; \
-  self->_index  = AF_LINE();          \
-  return &self->return_value;         \
   }
 
 #define CORO(ret_type_, name_, ...)        \
@@ -60,7 +57,7 @@ typedef struct {
     self->_status      = af_status_suspended; \
     self->_index       = AF_LINE();           \
     self->return_value = __VA_ARGS__;         \
-    return &self->return_value;               \
+    return;                                   \
     case AF_LINE():;                          \
   }
 
@@ -68,7 +65,7 @@ typedef struct {
   {                                      \
     self->_status = af_status_suspended; \
     self->_index  = AF_LINE();           \
-    return &self->return_value;          \
+    return;                              \
     case AF_LINE():;                     \
   }
 
@@ -77,14 +74,14 @@ typedef struct {
     self->_status      = af_status_finished; \
     self->_index       = AF_LINE();          \
     self->return_value = __VA_ARGS__;        \
-    return &self->return_value;              \
+    return;                                  \
   }
 
 #define AF_RETURN_VOID                  \
   {                                     \
     self->_status = af_status_finished; \
     self->_index  = AF_LINE();          \
-    return &self->return_value;         \
+    return;                             \
   }
 
 #define AF_AWAIT(promise_)                            \
@@ -96,21 +93,21 @@ typedef struct {
         (promise_)._state_machine(&(promise_));       \
       }                                               \
       if ((promise_)._status != af_status_finished)   \
-        return &self->return_value;                   \
+        return;                                       \
       else                                            \
         self->_status = af_status_running;            \
   }
 
-#define AF_YIELD_AWAIT(promise_)                         \
-  {                                                      \
-    case AF_LINE():                                      \
-      if ((promise_)._status != af_status_finished) {    \
-        self->_status      = af_status_suspended;        \
-        self->_index       = AF_LINE();                  \
-        self->return_value = *(promise_)._state_machine( \
-            &(promise_));                                \
-        return &self->return_value;                      \
-      }                                                  \
+#define AF_YIELD_AWAIT(promise_)                      \
+  {                                                   \
+    case AF_LINE():                                   \
+      if ((promise_)._status != af_status_finished) { \
+        self->_status = af_status_suspended;          \
+        self->_index  = AF_LINE();                    \
+        (promise_)._state_machine(&(promise_));       \
+        self->return_value = (promise_).return_value; \
+        return;                                       \
+      }                                               \
   }
 
 #define AF_TYPE(coro_) struct coro_##_coro_state_
@@ -129,7 +126,8 @@ typedef struct {
     (promise_) = _af_temp;                   \
   }
 
-#define AF_RESUME(promise_) *(promise_)._state_machine(&(promise_))
+#define AF_RESUME(promise_) \
+  ((promise_)._state_machine(&(promise_)), (promise_).return_value)
 
 #define AF_FINISHED(promise_) \
   ((promise_)._status == af_status_finished)
