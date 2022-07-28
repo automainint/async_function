@@ -25,13 +25,7 @@ static bool is_term() {
   return true;
 }
 
-enum code_value {
-  white   = 0,
-  yellow  = 1,
-  red     = 2,
-  green   = 3,
-  rewrite = 4
-};
+enum code_value { white, yellow, red, green };
 
 static void code(bool term, int c) {
   if (term) {
@@ -43,8 +37,6 @@ static void code(bool term, int c) {
       printf("\x1b[31m");
     if (c == green)
       printf("\x1b[32m");
-    if (c == rewrite)
-      printf("\x1b[1A\x1b[K");
   }
 }
 
@@ -54,7 +46,7 @@ int main(int argc, char **argv) {
 
   for (ptrdiff_t i = 0; i < af_tests_list.size; i++) {
     code(term, yellow);
-    printf("[ RUN    ] %s\n", af_tests_list.tests[i].test_name);
+    printf("[ RUN... ] %s ", af_tests_list.tests[i].test_name);
     code(term, white);
 
     struct timespec begin, end;
@@ -66,8 +58,9 @@ int main(int argc, char **argv) {
     int duration = (int) (ns_to_ms(end.tv_nsec - begin.tv_nsec) +
                           sec_to_ms(end.tv_sec - begin.tv_sec));
 
+    printf("\r");
+
     if (af_tests_list.tests[i].test_status == false) {
-      code(term, rewrite);
       code(term, red);
       printf("[ RUN    ] %s\n", af_tests_list.tests[i].test_name);
       printf("[ FAILED ] %s - %d ms\n",
@@ -75,7 +68,6 @@ int main(int argc, char **argv) {
       code(term, white);
       status = 1;
     } else {
-      code(term, rewrite);
       code(term, green);
       printf("[ RUN    ] %s\n", af_tests_list.tests[i].test_name);
       printf("[     OK ] %s - %d ms\n",
