@@ -9,7 +9,7 @@ CORO(int, foo) {
 CORO_END
 
 CORO(int, bar) {
-  AF_YIELD();
+  AF_YIELD_VOID;
   AF_RETURN(42);
 }
 CORO_END
@@ -31,7 +31,7 @@ TEST("coroutine resume and get returned value") {
 }
 
 TEST("coroutine suspend") {
-  AF_CREATE(promise, bar, .return_value = 0);
+  AF_CREATE(promise, bar);
   REQUIRE(AF_RESUME(promise) == 0);
   REQUIRE(AF_RESUME(promise) == 42);
   AF_DESTROY(promise);

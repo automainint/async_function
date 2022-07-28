@@ -21,7 +21,7 @@ enum af_status {
     int       _index;                                               \
     ret_type_ return_value;                                         \
     ret_type_ (*_state_machine)(struct name_##_coro_state_ * self); \
-    __VA_OPT__(__VA_ARGS__;)                                        \
+    __VA_ARGS__;                                                    \
   }
 
 #define AF_DECL(ret_type_, name_) \
@@ -48,21 +48,36 @@ enum af_status {
   AF_STATE(ret_type_, name_, __VA_ARGS__); \
   AF_IMPL(ret_type_, name_)
 
-#define AF_YIELD(...)                             \
-  {                                               \
-    self->_status = af_status_suspended;          \
-    self->_index  = AF_LINE();                    \
-    __VA_OPT__(self->return_value = __VA_ARGS__); \
-    return self->return_value;                    \
-    case AF_LINE():;                              \
+#define AF_YIELD(...)                         \
+  {                                           \
+    self->_status      = af_status_suspended; \
+    self->_index       = AF_LINE();           \
+    self->return_value = __VA_ARGS__;         \
+    return self->return_value;                \
+    case AF_LINE():;                          \
   }
 
-#define AF_RETURN(...)                            \
-  {                                               \
-    self->_status = af_status_finished;           \
-    self->_index  = AF_LINE();                    \
-    __VA_OPT__(self->return_value = __VA_ARGS__); \
-    return self->return_value;                    \
+#define AF_YIELD_VOID                    \
+  {                                      \
+    self->_status = af_status_suspended; \
+    self->_index  = AF_LINE();           \
+    return self->return_value;           \
+    case AF_LINE():;                     \
+  }
+
+#define AF_RETURN(...)                       \
+  {                                          \
+    self->_status      = af_status_finished; \
+    self->_index       = AF_LINE();          \
+    self->return_value = __VA_ARGS__;        \
+    return self->return_value;               \
+  }
+
+#define AF_RETURN_VOID                  \
+  {                                     \
+    self->_status = af_status_finished; \
+    self->_index  = AF_LINE();          \
+    return self->return_value;          \
   }
 
 #define AF_TYPE(coro_) struct coro_##_coro_state_
@@ -72,8 +87,8 @@ enum af_status {
   (promise_)._index         = 0;                   \
   (promise_)._state_machine = coro_##_coro_
 
-#define AF_CREATE(promise_, coro_, ...)                  \
-  AF_TYPE(coro_) promise_ __VA_OPT__(= { __VA_ARGS__ }); \
+#define AF_CREATE(promise_, coro_, ...)      \
+  AF_TYPE(coro_) promise_ = { __VA_ARGS__ }; \
   AF_INIT(promise_, coro_)
 
 #define AF_DESTROY(promise_)
