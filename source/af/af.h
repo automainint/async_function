@@ -10,6 +10,7 @@ extern "C" {
 enum af_status {
   af_status_suspended,
   af_status_running,
+  af_status_waiting,
   af_status_finished
 };
 
@@ -28,11 +29,11 @@ typedef struct {
     __VA_ARGS__                                                \
   }
 
-#define AF_DECL(ret_type_, name_) \
+#define AF_DECL(name_) \
   void name_##_coro_(struct name_##_coro_state_ *self)
 
-#define AF_IMPL(ret_type_, name_)             \
-  AF_DECL(ret_type_, name_) {                 \
+#define AF_IMPL(name_)                        \
+  AF_DECL(name_) {                            \
     if (self->_status != af_status_suspended) \
       return;                                 \
     self->_status = af_status_running;        \
@@ -48,7 +49,7 @@ typedef struct {
 
 #define CORO(ret_type_, name_, ...)        \
   AF_STATE(ret_type_, name_, __VA_ARGS__); \
-  AF_IMPL(ret_type_, name_)
+  AF_IMPL(name_)
 
 #define CORO_VOID(name_, ...) CORO(af_void, name_, __VA_ARGS__)
 
@@ -88,13 +89,14 @@ typedef struct {
   {                                                   \
     case AF_LINE():                                   \
       if ((promise_)._status != af_status_finished) { \
-        self->_status = af_status_suspended;          \
+        self->_status = af_status_waiting;            \
         self->_index  = AF_LINE();                    \
         (promise_)._state_machine(&(promise_));       \
       }                                               \
-      if ((promise_)._status != af_status_finished)   \
+      if ((promise_)._status != af_status_finished) { \
+        self->_status = af_status_suspended;          \
         return;                                       \
-      else                                            \
+      } else                                          \
         self->_status = af_status_running;            \
   }
 
