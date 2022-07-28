@@ -13,6 +13,9 @@ enum af_status {
   af_status_finished
 };
 
+typedef struct {
+} af_void;
+
 #define af self->
 
 #define AF_STATE(ret_type_, name_, ...)                             \
@@ -21,7 +24,7 @@ enum af_status {
     int       _index;                                               \
     ret_type_ return_value;                                         \
     ret_type_ (*_state_machine)(struct name_##_coro_state_ * self); \
-    __VA_ARGS__;                                                    \
+    __VA_ARGS__                                                     \
   }
 
 #define AF_DECL(ret_type_, name_) \

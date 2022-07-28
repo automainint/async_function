@@ -50,7 +50,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          cmake -D FAIR_CC=clang -B build -S .
+          cmake -B build -S .
           cmake --build build --config $BUILD_TYPE
 
       - name: Run tests & generate coverage on Linux

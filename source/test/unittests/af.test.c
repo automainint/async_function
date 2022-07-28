@@ -14,8 +14,15 @@ CORO(int, bar) {
 }
 CORO_END
 
-CORO(int, gen, int i; int min; int max) {
+CORO(int, gen, int i; int min; int max;) {
   for (af i = af min; af i < af max; af i++) AF_YIELD(af i);
+}
+CORO_END
+
+CORO(af_void, task) {
+  AF_YIELD_VOID;
+  AF_YIELD_VOID;
+  AF_RETURN_VOID;
 }
 CORO_END
 
@@ -45,6 +52,17 @@ TEST("coroutine generator") {
 
 TEST("coroutine status finished") {
   AF_CREATE(promise, bar);
+  REQUIRE(!AF_FINISHED(promise));
+  AF_RESUME(promise);
+  REQUIRE(!AF_FINISHED(promise));
+  AF_RESUME(promise);
+  REQUIRE(AF_FINISHED(promise));
+  AF_DESTROY(promise);
+}
+
+TEST("coroutine task") {
+  AF_CREATE(promise, task);
+  AF_RESUME(promise);
   REQUIRE(!AF_FINISHED(promise));
   AF_RESUME(promise);
   REQUIRE(!AF_FINISHED(promise));
