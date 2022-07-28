@@ -61,6 +61,24 @@ CORO(int, test_await_multiple, AF_TYPE(test_bar) promises[3];) {
 }
 CORO_END
 
+void test_lazy_resume(void *_, af_state_machine state_machine,
+                      void *coro) { }
+
+void test_lazy_join(void *_, af_state_machine state_machine,
+                    void *coro) {
+  AF_INTERNAL(coro)._status = af_status_ready;
+  state_machine(coro, af_request_join);
+}
+
+void test_immediate_resume(void *_, af_state_machine state_machine,
+                           void *coro) {
+  AF_INTERNAL(coro)._status = af_status_ready;
+  state_machine(coro, af_request_join);
+}
+
+void test_immediate_join(void *_, af_state_machine state_machine,
+                         void *coro) { }
+
 TEST("coroutine create") {
   AF_CREATE(promise, test_foo);
   REQUIRE(!AF_FINISHED(promise));
@@ -100,7 +118,7 @@ TEST("coroutine resume and join manually") {
 }
 
 TEST("coroutine suspend") {
-  AF_CREATE(promise, test_bar);
+  AF_CREATE(promise, test_bar, .return_value = 0);
   REQUIRE(AF_RESUME_AND_JOIN(promise) == 0);
   REQUIRE(AF_RESUME_AND_JOIN(promise) == 42);
 }
@@ -160,5 +178,31 @@ TEST("coroutine await multiple") {
   AF_CREATE(promise, test_await_multiple);
   REQUIRE(AF_RESUME_AND_JOIN(promise) == 0);
   REQUIRE(AF_RESUME_AND_JOIN(promise) == 42 * 3);
+  REQUIRE(AF_FINISHED(promise));
+}
+
+TEST("coroutine custom execution context lazy") {
+  AF_CREATE(promise, test_foo, .return_value = 0);
+  AF_EXECUTION_CONTEXT(promise, .state = NULL,
+                       .resume = test_lazy_resume,
+                       .join   = test_lazy_join);
+  AF_RESUME(promise);
+  REQUIRE(promise.return_value == 0);
+  REQUIRE(!AF_FINISHED(promise));
+  AF_JOIN(promise);
+  REQUIRE(promise.return_value == 42);
+  REQUIRE(AF_FINISHED(promise));
+}
+
+TEST("coroutine custom execution context immediate") {
+  AF_CREATE(promise, test_foo, .return_value = 0);
+  AF_EXECUTION_CONTEXT(promise, .state = NULL,
+                       .resume = test_immediate_resume,
+                       .join   = test_immediate_join);
+  AF_RESUME(promise);
+  REQUIRE(promise.return_value == 42);
+  REQUIRE(AF_FINISHED(promise));
+  AF_JOIN(promise);
+  REQUIRE(promise.return_value == 42);
   REQUIRE(AF_FINISHED(promise));
 }

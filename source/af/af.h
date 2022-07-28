@@ -1,8 +1,6 @@
 #ifndef AF_AF_H
 #define AF_AF_H
 
-#include <string.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,17 +24,28 @@ typedef struct {
 } af_void;
 
 typedef void (*af_state_machine)(void *self_void_, int request_);
+typedef void (*af_execution)(void            *state,
+                             af_state_machine state_machine,
+                             void            *coro_state);
 
 typedef struct {
-  void *state;
-  void (*resume)(void *state, af_state_machine state_machine_,
-                 void *coro_state_);
-  void (*join)(void *state, void *coro_state_);
+  void        *state;
+  af_execution resume;
+  af_execution join;
 } af_execution_context;
+
+typedef struct {
+  int                  _status;
+  int                  _index;
+  af_state_machine     _state_machine;
+  af_execution_context _context;
+} af_type_void;
 
 #ifndef AF_DISABLE_SELF_SHORTCUT
 #  define af self->
 #endif
+
+#define AF_INTERNAL(coro_) (*((af_type_void *) (coro_)))
 
 #define AF_STATE(ret_type_, name_, ...)  \
   struct name_##_coro_state_ {           \
@@ -56,15 +65,23 @@ typedef struct {
     struct name_##_coro_state_ *self =                     \
         (struct name_##_coro_state_ *) self_void_;         \
     if (self->_status == af_status_suspended) {            \
-      if (self->_context.resume != NULL &&                 \
-          request_ == af_request_resume)                   \
+      if (request_ == af_request_resume &&                 \
+          self->_context.resume != NULL)                   \
         self->_context.resume(self->_context.state,        \
                               self->_state_machine, self); \
-      else if (self->_context.join != NULL &&              \
-               request_ == af_request_join)                \
-        self->_context.join(self->_context.state, self);   \
-      else if (request_ == af_request_join ||              \
-               request_ == af_request_resume_and_join) {   \
+      else if (request_ == af_request_join &&              \
+               self->_context.join != NULL)                \
+        self->_context.join(self->_context.state,          \
+                            self->_state_machine, self);   \
+      else if (request_ == af_request_resume_and_join &&   \
+               self->_context.resume != NULL &&            \
+               self->_context.join != NULL) {              \
+        self->_context.resume(self->_context.state,        \
+                              self->_state_machine, self); \
+        self->_context.join(self->_context.state,          \
+                            self->_state_machine, self);   \
+      } else if (request_ == af_request_join ||            \
+                 request_ == af_request_resume_and_join) { \
         self->_status = af_status_ready;                   \
         self->_state_machine(self, af_request_join);       \
       }                                                    \
@@ -171,8 +188,14 @@ typedef struct {
 
 #define AF_INIT(promise_, coro_, ...)        \
   {                                          \
-    AF_CREATE(_af_temp, coro_, __VA_ARGS__); \
-    (promise_) = _af_temp;                   \
+    AF_CREATE(af_temp_, coro_, __VA_ARGS__); \
+    (promise_) = af_temp_;                   \
+  }
+
+#define AF_EXECUTION_CONTEXT(promise_, ...)          \
+  {                                                  \
+    af_execution_context af_temp_ = { __VA_ARGS__ }; \
+    (promise_)._context           = af_temp_;        \
   }
 
 #define AF_RESUME(promise_) \
