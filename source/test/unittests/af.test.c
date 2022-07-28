@@ -26,24 +26,29 @@ TEST("coroutine create and destroy") {
 
 TEST("coroutine resume and get returned value") {
   AF_CREATE(promise, foo);
-  AF_RESUME(promise);
-  REQUIRE(promise.return_value == 42);
+  REQUIRE(AF_RESUME(promise) == 42);
   AF_DESTROY(promise);
 }
 
 TEST("coroutine suspend") {
-  AF_CREATE(promise, bar);
-  AF_RESUME(promise);
-  REQUIRE(promise.return_value == 0);
-  AF_RESUME(promise);
-  REQUIRE(promise.return_value == 42);
+  AF_CREATE(promise, bar, .return_value = 0);
+  REQUIRE(AF_RESUME(promise) == 0);
+  REQUIRE(AF_RESUME(promise) == 42);
   AF_DESTROY(promise);
 }
 
 TEST("coroutine generator") {
-  AF_CREATE(promise, gen);
-  promise.min = 10;
-  promise.max = 15;
+  AF_CREATE(promise, gen, .min = 10, .max = 15);
   for (int i = 0; i < 5; i++) REQUIRE(AF_RESUME(promise) == 10 + i);
+  AF_DESTROY(promise);
+}
+
+TEST("coroutine status finished") {
+  AF_CREATE(promise, bar);
+  REQUIRE(!AF_FINISHED(promise));
+  AF_RESUME(promise);
+  REQUIRE(!AF_FINISHED(promise));
+  AF_RESUME(promise);
+  REQUIRE(AF_FINISHED(promise));
   AF_DESTROY(promise);
 }

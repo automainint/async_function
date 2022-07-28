@@ -35,10 +35,12 @@ enum af_status {
     switch (self->_index) {                   \
       case 0:
 
+#define AF_LINE() __LINE__
+
 #define CORO_END                      \
   }                                   \
   self->_status = af_status_finished; \
-  self->_index  = __LINE__;           \
+  self->_index  = AF_LINE();          \
   return self->return_value;          \
   }
 
@@ -49,7 +51,7 @@ enum af_status {
 #define AF_YIELD(...)                             \
   {                                               \
     self->_status = af_status_suspended;          \
-    self->_index  = __LINE__;                     \
+    self->_index  = AF_LINE();                    \
     __VA_OPT__(self->return_value = __VA_ARGS__); \
     return self->return_value;                    \
     case __LINE__:                                \
@@ -58,25 +60,28 @@ enum af_status {
 #define AF_RETURN(...)                            \
   {                                               \
     self->_status = af_status_finished;           \
-    self->_index  = __LINE__;                     \
+    self->_index  = AF_LINE();                    \
     __VA_OPT__(self->return_value = __VA_ARGS__); \
     return self->return_value;                    \
   }
 
-#define AF_PROMISE(promise_, coro_) \
-  struct coro_##_coro_state_ promise_
+#define AF_TYPE(coro_) struct coro_##_coro_state_
 
-#define AF_INIT(promise_, coro_)         \
-  memset(&promise_, 0, sizeof promise_); \
-  promise_._state_machine = coro_##_coro_
+#define AF_INIT(promise_, coro_)                   \
+  (promise_)._status        = af_status_suspended; \
+  (promise_)._index         = 0;                   \
+  (promise_)._state_machine = coro_##_coro_
 
-#define AF_CREATE(promise_, coro_) \
-  AF_PROMISE(promise_, coro_);     \
+#define AF_CREATE(promise_, coro_, ...)                  \
+  AF_TYPE(coro_) promise_ __VA_OPT__(= { __VA_ARGS__ }); \
   AF_INIT(promise_, coro_)
 
 #define AF_DESTROY(promise_)
 
-#define AF_RESUME(promise_) promise_._state_machine(&promise_)
+#define AF_RESUME(promise_) promise_._state_machine(&(promise_))
+
+#define AF_FINISHED(promise_) \
+  ((promise_)._status == af_status_finished)
 
 #ifdef __cplusplus
 }
