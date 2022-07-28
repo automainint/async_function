@@ -64,15 +64,13 @@ CORO_END
 void test_execute_lazy(void *_, void *coro, int request) {
   if (request == af_request_resume)
     return;
-  AF_INTERNAL(coro)._status = af_status_ready;
-  AF_INTERNAL(coro)._state_machine(coro, af_request_join);
+  AF_EXECUTE(coro);
 }
 
 void test_execute_immediate(void *_, void *coro, int request) {
   if (request == af_request_join)
     return;
-  AF_INTERNAL(coro)._status = af_status_ready;
-  AF_INTERNAL(coro)._state_machine(coro, af_request_join);
+  AF_EXECUTE(coro);
 }
 
 TEST("coroutine create") {

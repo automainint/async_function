@@ -253,6 +253,12 @@ typedef struct {
 #define AF_AWAIT_ALL(promises_) \
   AF_AWAIT_N((promises_), sizeof(promises_) / sizeof((promises_)[0]))
 
+#define AF_EXECUTE(coro_state_)                                     \
+  {                                                                 \
+    AF_INTERNAL(coro_state_)._status = af_status_ready;             \
+    AF_INTERNAL(coro_state_)._state_machine(coro, af_request_join); \
+  }
+
 #ifdef __cplusplus
 }
 #endif
