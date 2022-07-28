@@ -33,7 +33,7 @@ enum af_status {
       return self->return_value;              \
     self->_status = af_status_running;        \
     switch (self->_index) {                   \
-      case 0:
+      case 0:;
 
 #define AF_LINE() __LINE__
 
@@ -54,7 +54,7 @@ enum af_status {
     self->_index  = AF_LINE();                    \
     __VA_OPT__(self->return_value = __VA_ARGS__); \
     return self->return_value;                    \
-    case AF_LINE():                               \
+    case AF_LINE():;                              \
   }
 
 #define AF_RETURN(...)                            \
