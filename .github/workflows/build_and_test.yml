@@ -40,7 +40,7 @@ jobs:
           choco install opencppcoverage
           echo "C:/Program Files/OpenCppCoverage" >> $GITHUB_PATH
 
-      - name: Build with GCC
+      - name: Build
         if: runner.os != 'Windows'
         run: |
           cmake -D CMAKE_BUILD_TYPE=$BUILD_TYPE -B build -S .
