@@ -21,12 +21,15 @@ extern "C" {
 #  define AF_TEST_STRING_SIZE 0x100
 #endif
 
-typedef void (*af_test_report)(ptrdiff_t, bool);
+typedef void (*af_test_report)(ptrdiff_t, char const *file, int line,
+                               bool);
 typedef void (*af_test_function)(ptrdiff_t, af_test_report);
 
 struct af_test_case {
   char             test_name[AF_TEST_STRING_SIZE];
   af_test_function test_fn;
+  char const      *file;
+  int              line;
   bool             test_status;
 };
 
@@ -75,12 +78,12 @@ extern struct af_tests_list af_tests_list;
   static void AF_TEST_CONCAT3(af_test_run_, __LINE__, AF_TEST_FILE)( \
       ptrdiff_t af_test_index_, af_test_report af_test_report_)
 
-#define REQUIRE(ok)                          \
-  {                                          \
-    bool af_ok_ = (ok);                      \
-    af_test_report_(af_test_index_, af_ok_); \
-    if (!af_ok_)                             \
-      return;                                \
+#define REQUIRE(ok)                                              \
+  {                                                              \
+    bool af_ok_ = (ok);                                          \
+    af_test_report_(af_test_index_, __FILE__, __LINE__, af_ok_); \
+    if (!af_ok_)                                                 \
+      return;                                                    \
   }
 
 #ifdef __cplusplus

@@ -6,7 +6,10 @@
 
 struct af_tests_list af_tests_list = { 0 };
 
-static void report(ptrdiff_t i, bool ok) {
+static void report(ptrdiff_t i, char const *file, int line, bool ok) {
+  af_tests_list.tests[i].file = file;
+  af_tests_list.tests[i].line = line;
+
   if (!ok)
     af_tests_list.tests[i].test_status = false;
 }
@@ -75,6 +78,13 @@ int main(int argc, char **argv) {
       code(term, white);
     }
   }
+
+  if (status != 0)
+    for (ptrdiff_t i = 0; i < af_tests_list.size; i++)
+      if (!af_tests_list.tests[i].test_status)
+        printf("Assertion on line %d in \"%s\" failed\n",
+               af_tests_list.tests[i].line,
+               af_tests_list.tests[i].file);
 
   return status;
 }
