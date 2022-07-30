@@ -1,5 +1,5 @@
 ##  Minimalist Code of Conduct
-We believe that an elaborate color_code of conduct invites a lot of fighting over intricate details, much like law, and we do not have the resources to build up the equivalent of a legal system. Therefore, we prefer keeping our rules as short as possible and filling the gaps with the mortar of human interaction: empathy.
+We believe that an elaborate code of conduct invites a lot of fighting over intricate details, much like law, and we do not have the resources to build up the equivalent of a legal system. Therefore, we prefer keeping our rules as short as possible and filling the gaps with the mortar of human interaction: empathy.
 
 All we ask of members of this project is this:
 1. Please treat each other with respect and understanding.
