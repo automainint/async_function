@@ -28,6 +28,7 @@ typedef void (*af_execute)(void *state, void *coro_state,
                            int request);
 
 typedef struct {
+  long long  _internal;
   void      *state;
   af_execute execute;
 } af_execution_context;
@@ -178,10 +179,10 @@ typedef struct {
     (promise_) = af_temp_;                   \
   }
 
-#define AF_EXECUTION_CONTEXT(promise_, ...)          \
-  {                                                  \
-    af_execution_context af_temp_ = { __VA_ARGS__ }; \
-    (promise_)._context           = af_temp_;        \
+#define AF_EXECUTION_CONTEXT(promise_, ...)                          \
+  {                                                                  \
+    af_execution_context af_temp_ = { ._internal = 0, __VA_ARGS__ }; \
+    (promise_)._context           = af_temp_;                        \
   }
 
 #define AF_RESUME(promise_) \
