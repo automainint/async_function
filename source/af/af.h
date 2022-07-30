@@ -16,7 +16,8 @@ enum af_status {
 enum af_request {
   af_request_resume,
   af_request_join,
-  af_request_resume_and_join
+  af_request_resume_and_join,
+  af_request_execute
 };
 
 typedef struct {
@@ -63,19 +64,18 @@ typedef struct {
   AF_DECL(name_) {                                               \
     struct name_##_coro_state_ *self =                           \
         (struct name_##_coro_state_ *) self_void_;               \
-    if (self->_status == af_status_suspended) {                  \
+    if (request_ != af_request_execute) {                        \
       if (self->_context.execute != NULL)                        \
         self->_context.execute(self->_context.state, self_void_, \
                                request_);                        \
       else if (request_ == af_request_join ||                    \
                request_ == af_request_resume_and_join) {         \
         self->_status = af_status_ready;                         \
-        self->_state_machine(self_void_, af_request_join);       \
+        self->_state_machine(self_void_, af_request_execute);    \
       }                                                          \
       return;                                                    \
     }                                                            \
-    if (self->_status != af_status_ready ||                      \
-        request_ != af_request_join)                             \
+    if (self->_status != af_status_ready)                        \
       return;                                                    \
     self->_status = af_status_running;                           \
     switch (self->_index) {                                      \
@@ -254,10 +254,11 @@ typedef struct {
 #define AF_AWAIT_ALL(promises_) \
   AF_AWAIT_N((promises_), sizeof(promises_) / sizeof((promises_)[0]))
 
-#define AF_EXECUTE(coro_state_)                                     \
-  {                                                                 \
-    AF_INTERNAL(coro_state_)._status = af_status_ready;             \
-    AF_INTERNAL(coro_state_)._state_machine(coro, af_request_join); \
+#define AF_EXECUTE(coro_state_)                         \
+  {                                                     \
+    AF_INTERNAL(coro_state_)._status = af_status_ready; \
+    AF_INTERNAL(coro_state_)                            \
+        ._state_machine(coro, af_request_execute);      \
   }
 
 #ifdef __cplusplus
